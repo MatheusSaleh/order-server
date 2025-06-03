@@ -80,6 +80,11 @@
 			<artifactId>spring-grpc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+<!--		<dependency>-->
+<!--			<groupId>br.com.exemplo</groupId>-->
+<!--			<artifactId>grpc-commons</artifactId>-->
+<!--			<version>1.0.0</version>-->
+<!--		</dependency>-->
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>
