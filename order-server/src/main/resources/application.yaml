@@ -9,6 +9,9 @@ spring:
     port: 5672
     username: user
     password: password
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/orderdb
 
 order:
   queue: pedidos_fila
@@ -16,3 +19,4 @@ order:
 grpc:
   server:
     port: 9090
+

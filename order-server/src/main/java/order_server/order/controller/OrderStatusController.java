@@ -1,4 +1,4 @@
-package order_server.controller;
+package order_server.order.controller;
 
 import org.springframework.web.bind.annotation.*;
 
