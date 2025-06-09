@@ -8,11 +8,11 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class OrderItem {
-    private String productId;
+  private String productId;
 
-    private String productName;
+  private String productName;
 
-    private int quantity;
+  private int quantity;
 
-    private double price;
+  private double price;
 }

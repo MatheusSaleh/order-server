@@ -11,22 +11,10 @@
 	<groupId>com.order-server</groupId>
 	<artifactId>order-server</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>war</packaging>
+	<packaging>jar</packaging>
 	<name>order-server</name>
 	<description>Spring Boot com gRPC e RabbitMQ Producer</description>
 	<url/>
-	<licenses>
-		<license/>
-	</licenses>
-	<developers>
-		<developer/>
-	</developers>
-	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
-	</scm>
 	<properties>
 		<java.version>21</java.version>
 		<grpc.version>1.72.0</grpc.version>

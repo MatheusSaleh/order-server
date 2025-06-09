@@ -14,6 +14,18 @@ message OrderRequest {
   string timestamp = 5;
 }
 
+message GetOrderStatusRequest {
+  string order_id = 1;
+}
+
+message GetOrderStatusResponse {
+  string order_id = 1;
+  string status = 2;
+  string last_updated = 3;
+  repeated OrderItem items = 4;
+  string customer_id = 5;
+}
+
 // Item dentro do pedido
 message OrderItem {
   string productId = 1;
@@ -30,4 +42,5 @@ message OrderResponse {
 
 service OrderService {
   rpc PlaceOrder (OrderRequest) returns (OrderResponse);
+  rpc GetOrderStatus (GetOrderStatusRequest) returns (GetOrderStatusResponse);
 }

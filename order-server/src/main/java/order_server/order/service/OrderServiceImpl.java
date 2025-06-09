@@ -1,74 +1,124 @@
 package order_server.order.service;
 
+import br.com.exemplo.grpc.GetOrderStatusResponse;
 import br.com.exemplo.grpc.OrderRequest;
 import br.com.exemplo.grpc.OrderResponse;
 import br.com.exemplo.grpc.OrderServiceGrpc;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import order_server.order.model.Order;
+import lombok.extern.slf4j.Slf4j;
+import order_server.order.dto.SimpleOrderDto;
 import order_server.order.repository.OrderRepository;
-import order_server.order_item.model.OrderItem;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.grpc.server.service.GrpcService;
 
-import java.util.List;
-import java.util.UUID;
-
+@Slf4j
 @GrpcService
 @RequiredArgsConstructor
 public class OrderServiceImpl extends OrderServiceGrpc.OrderServiceImplBase {
 
-    private final RabbitTemplate rabbitTemplate;
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    private final OrderRepository orderRepository;
+  private final RabbitTemplate rabbitTemplate;
+  private final OrderRepository orderRepository;
 
-    @Value("${order.queue}")
-    private String queue;
+  @Value("${order.queue}")
+  private String queue;
 
-    @Override
-    public void placeOrder(OrderRequest request, StreamObserver<OrderResponse> responseObserver) {
-        try {
-            String orderId = request.getOrderId().isEmpty() ? UUID.randomUUID().toString() : request.getOrderId();
+  @Override
+  public void placeOrder(OrderRequest request, StreamObserver<OrderResponse> responseObserver) {
+    String orderId =
+        request.getOrderId().isEmpty() ? UUID.randomUUID().toString() : request.getOrderId();
+    log.info(
+        "Recebido pedido para cliente: {}. ID do Pedido Gerado: {}",
+        request.getCustomerName(),
+        orderId);
+    try {
 
-            List<OrderItem> itemList = request.getItemsList().stream().map(item -> {
-                OrderItem orderItem = new OrderItem();
-                orderItem.setProductId(item.getProductId());
-                orderItem.setProductName(item.getProductName());
-                orderItem.setQuantity(item.getQuantity());
-                orderItem.setPrice(item.getPrice());
-                return orderItem;
-            }).toList();
+      SimpleOrderDto orderDto =
+          new SimpleOrderDto(
+              orderId,
+              request.getCustomerName(),
+              request.getItemsList().stream()
+                  .map(
+                      item ->
+                          new SimpleOrderDto.SimpleOrderItem(
+                              item.getProductId(), item.getQuantity(), item.getPrice()))
+                  .collect(Collectors.toList()),
+              "PENDING_QUEUE");
 
-            Order order = new Order();
-            order.setId(orderId);
-            order.setCustomerName(request.getCustomerName());
-            order.setItems(itemList);
-            order.setTotalAmount(request.getTotalAmount());
-            order.setTimestamp(request.getTimestamp());
-            order.setStatus("RECEIVED");
+      rabbitTemplate.convertAndSend(queue, orderDto);
+      log.info("Pedido {} enviado com sucesso para a fila {}", orderId, queue);
 
-            orderRepository.save(order);
+      OrderResponse response =
+          OrderResponse.newBuilder()
+              .setOrderId(orderId)
+              .setStatus("RECEIVED")
+              .setMessage("Pedido recebido e sendo processado.")
+              .build();
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
 
-            OrderRequest updatedRequest = OrderRequest.newBuilder(request)
-                    .setOrderId(orderId)
-                    .build();
-            rabbitTemplate.convertAndSend(queue, objectMapper.writeValueAsString(updatedRequest));
-
-            OrderResponse response = OrderResponse.newBuilder()
-                    .setOrderId(orderId)
-                    .setStatus("RECEIVED")
-                    .setMessage("Pedido recebido e salvo com sucesso.")
-                    .build();
-
-            responseObserver.onNext(response);
-            responseObserver.onCompleted();
-
-        } catch (Exception e) {
-            responseObserver.onError(e);
-        }
+    } catch (Exception e) {
+      log.error("Erro ao enviar pedido {} para a fila: {}", orderId, e.getMessage());
+      responseObserver.onError(
+          io.grpc.Status.INTERNAL
+              .withDescription("Não foi possivel colocar o pedido na fila de processamento.")
+              .asRuntimeException());
     }
+  }
 
+  @Override
+  public void getOrderStatus(
+      OrderRequest request, StreamObserver<GetOrderStatusResponse> responseObserver) {
+    String orderId = request.getOrderId();
+    log.info("Consultando status para o pedido: {}", orderId);
 
+    try {
+      orderRepository
+          .findById(orderId)
+          .map(
+              orderDoc -> {
+                GetOrderStatusResponse.Builder responseBuilder =
+                    GetOrderStatusResponse.newBuilder()
+                        .setOrderId(orderDoc.getId())
+                        .setStatus(orderDoc.getStatus());
+
+                if (orderDoc.getItems() != null) {
+                  orderDoc
+                      .getItems()
+                      .forEach(
+                          item ->
+                              responseBuilder.addItems(
+                                  br.com.exemplo.grpc.OrderItem.newBuilder()
+                                      .setProductId(item.getProductId())
+                                      .setQuantity(item.getQuantity())
+                                      .setPrice(item.getPrice())
+                                      .build()));
+                }
+                return responseBuilder.build();
+              })
+          .ifPresentOrElse(
+              response -> {
+                responseObserver.onNext(response);
+                responseObserver.onCompleted();
+              },
+              () -> {
+                log.warn("Pedido {} não encontrado no banco de dados.", orderId);
+                responseObserver.onError(
+                    Status.NOT_FOUND
+                        .withDescription("Pedido com ID " + orderId + " não encontrado.")
+                        .asRuntimeException());
+              });
+
+    } catch (Exception e) {
+      log.error("Erro ao consultar status do pedido {}: {}", orderId, e.getMessage(), e);
+      responseObserver.onError(
+          io.grpc.Status.INTERNAL
+              .withDescription("Erro interno ao consultar o status do pedido.")
+              .asRuntimeException());
+    }
+  }
 }
