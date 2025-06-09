@@ -7,11 +7,11 @@ spring:
   rabbitmq:
     host: localhost
     port: 5672
-    username: user
-    password: password
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
   data:
     mongodb:
-      uri: mongodb://localhost:27017/orderdb
+      uri: mongodb://localhost:27017/${MONGO_DB}
 
 order:
   queue: pedidos_fila
