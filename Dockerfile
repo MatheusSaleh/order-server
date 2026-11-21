@@ -10,7 +10,7 @@ COPY pom.xml .
 COPY src ./src
 RUN --mount=type=cache,target=/root/.m2 mvn -B -q package -DskipTests
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:24-jre-alpine
 WORKDIR /app
 RUN apk upgrade --no-cache && addgroup -S app && adduser -S app -G app
 COPY --from=build /workspace/target/*.jar app.jar
