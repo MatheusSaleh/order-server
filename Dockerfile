@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 # Build: docker compose (order-platform) fornece o contexto adicional "grpc-commons".
 # Standalone: docker build --build-context grpc-commons=../grpc-commons .
-FROM maven:3.9-eclipse-temurin-21 AS build
+FROM maven:3.9-eclipse-temurin-26 AS build
 WORKDIR /workspace
 COPY --from=grpc-commons pom.xml /grpc-commons/pom.xml
 COPY --from=grpc-commons src /grpc-commons/src
