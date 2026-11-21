@@ -9,6 +9,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # O projeto usa Java 21 (LTS): nao trocar a versao do Java das imagens automaticamente
+    ignore:
+      - dependency-name: "eclipse-temurin"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "maven"
   - package-ecosystem: github-actions
     directory: /
     schedule:
