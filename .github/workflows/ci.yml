@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Instala o contrato localmente (dispensa esperar a tag no JitPack)
+      - uses: actions/checkout@v4
+        with:
+          repository: MatheusSaleh/grpc-commons
+          path: grpc-commons
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Instalar grpc-commons
+        run: mvn -B -q -f grpc-commons/pom.xml install -DskipTests
+
+      - name: Testes
+        run: mvn -B verify
+
+      - name: Build da imagem Docker
+        run: docker build --build-context grpc-commons=grpc-commons -t ${{ github.event.repository.name }}:ci .
+
+      - name: Scan de vulnerabilidades (Trivy)
+        run: >
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest
+          image --exit-code 1 --ignore-unfixed --severity HIGH,CRITICAL ${{ github.event.repository.name }}:ci

@@ -1,5 +1,6 @@
 package order_server.order.model;
 
+import java.time.Instant;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,7 +21,13 @@ public class Order {
 
   private double totalAmount;
 
+  /** Timestamp informado pelo cliente (texto livre). */
   private String timestamp;
 
+  /** PENDING, PROCESSING, COMPLETED ou FAILED. */
   private String status;
+
+  private Instant createdAt;
+
+  private Instant updatedAt;
 }

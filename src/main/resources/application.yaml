@@ -1,0 +1,28 @@
+server:
+  port: ${HTTP_PORT:8081}
+
+spring:
+  application:
+    name: order-server
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+  mongodb:
+    uri: ${MONGODB_URI:mongodb://localhost:27017/orderdb}
+  grpc:
+    server:
+      port: ${GRPC_PORT:9090}
+      # Reflection expoe o catalogo de servicos; ligado so em desenvolvimento
+      reflection:
+        enabled: ${GRPC_REFLECTION_ENABLED:false}
+
+order:
+  queue: ${ORDER_QUEUE:pedidos_fila}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
