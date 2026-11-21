@@ -9,10 +9,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Instala o contrato localmente (dispensa esperar a tag no JitPack)
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: MatheusSaleh/grpc-commons
           path: grpc-commons
